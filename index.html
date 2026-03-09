@@ -2,45 +2,63 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Block Blast Ultimate Precision</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Block Blast iPad Optimized</title>
     <style>
-        :root { --bg: #1a234d; --board-bg: #121936; --cell: #1e2952; --pink: #ff007f; }
+        :root { 
+            --bg: #1a234d; 
+            --board-bg: #121936; 
+            --cell: #1e2952; 
+            --pink: #ff007f;
+            /* Safe Area für iPad Home-Leiste */
+            --safe-bottom: max(40px, env(safe-area-inset-bottom)); 
+        }
         * { box-sizing: border-box; touch-action: none; -webkit-user-select: none; }
         body { 
             background: var(--bg); color: white; font-family: 'Arial Rounded MT Bold', sans-serif; 
             margin: 0; display: flex; flex-direction: column; align-items: center; height: 100vh; overflow: hidden;
         }
 
-        /* Header & Pulsierendes Herz */
-        #header { width: 100%; height: 140px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
+        #header { width: 100%; height: 15vh; min-height: 100px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
         #heart-glow { 
             position: absolute; font-size: 140px; color: var(--pink); 
             filter: blur(35px); opacity: 0.3; z-index: 1; animation: pulse 2s infinite;
         }
         @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 0.3; } 50% { transform: scale(1.15); opacity: 0.5; } }
-        #score { font-size: 90px; font-weight: 900; z-index: 2; text-shadow: 0 5px 15px rgba(0,0,0,0.5); }
-        #best-container { position: absolute; top: 20px; left: 25px; color: #f9b31c; font-size: 24px; font-weight: bold; }
+        #score { font-size: clamp(60px, 10vh, 90px); font-weight: 900; z-index: 2; text-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        #best-container { position: absolute; top: 20px; left: 25px; color: #f9b31c; font-size: 22px; font-weight: bold; }
 
-        /* Board Setup */
         #board-container { background: var(--board-bg); padding: 8px; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.7); }
-        #board { display: grid; grid-template-columns: repeat(8, 1fr); gap: 3px; width: 92vw; max-width: 380px; aspect-ratio: 1; }
+        #board { display: grid; grid-template-columns: repeat(8, 1fr); gap: 3px; width: 90vw; max-width: 400px; aspect-ratio: 1; }
         .cell { background: var(--cell); border-radius: 3px; width: 100%; height: 100%; transition: background 0.1s; }
         .cell.filled { 
             border: 2px solid rgba(0,0,0,0.2);
             box-shadow: inset 4px 4px 0 rgba(255,255,255,0.2), inset -4px -4px 0 rgba(0,0,0,0.3);
         }
 
-        /* Tray */
-        #tray { display: flex; justify-content: space-around; align-items: center; width: 100%; max-width: 440px; height: 160px; margin-top: auto; padding-bottom: 30px; }
-        .slot { width: 120px; height: 120px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.02); border-radius: 20px; }
-        .shape { display: grid; gap: 2px; cursor: pointer; }
+        /* TRAY NACH OBEN VERSCHOBEN */
+        #tray { 
+            display: flex; justify-content: space-around; align-items: center; 
+            width: 100%; max-width: 500px; 
+            height: 180px; 
+            margin-top: 20px; 
+            padding-bottom: var(--safe-bottom); /* iPad Leiste Schutz */
+        }
+        
+        /* GROSSE HITBOX FÜR SLOTS */
+        .slot { 
+            width: 130px; height: 130px; 
+            display: flex; align-items: center; justify-content: center; 
+            background: rgba(255,255,255,0.03); border-radius: 20px;
+            position: relative;
+            cursor: pointer;
+            /* Die Hitbox ist durch das Padding/Sizing des Slots bereits vergrößert */
+        }
+        
+        .shape { display: grid; gap: 2px; pointer-events: none; /* Klick geht durch auf den Slot */ }
         .block { border-radius: 2px; box-shadow: inset 2px 2px 0 rgba(255,255,255,0.2), inset -2px -2px 0 rgba(0,0,0,0.25); }
 
-        /* Overlays & FX */
         #game-over { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; }
-        .clearing { animation: flash 0.3s ease-out forwards; }
-        @keyframes flash { 0% { filter: brightness(3); transform: scale(1.1); } 100% { filter: brightness(1); transform: scale(0); opacity: 0; } }
     </style>
 </head>
 <body>
@@ -61,7 +79,7 @@
 
     <div id="game-over">
         <h1 style="font-size: 50px; color: #ff2a85;">GAME OVER</h1>
-        <button onclick="location.reload()" style="padding: 20px 60px; border-radius: 50px; border: none; background: #22c55e; color: white; font-size: 24px; font-weight: bold; box-shadow: 0 8px 0 #16a34a; cursor: pointer;">RESTART</button>
+        <button onclick="location.reload()" style="padding: 20px 60px; border-radius: 50px; border: none; background: #22c55e; color: white; font-size: 24px; font-weight: bold; cursor: pointer;">RESTART</button>
     </div>
 
 <script>
@@ -74,22 +92,19 @@
     let score = 0;
     bestEl.innerText = localStorage.getItem('bb_vFinal_best') || 0;
 
-    // ALLE ROTATIONEN (24 Definitionen für maximale Abwechslung)
     const SHAPES = [
-        { d: [[1,1],[1,1]], c: '#facc15' }, // 2x2
-        { d: [[1,1,1],[1,1,1],[1,1,1]], c: '#eab308' }, // 3x3
-        { d: [[1]], c: '#ec4899' }, // Dot
-        { d: [[1,1,1,1]], c: '#38bdf8' }, { d: [[1],[1],[1],[1]], c: '#38bdf8' }, // I-4
-        { d: [[1,1,1]], c: '#4ade80' }, { d: [[1],[1],[1]], c: '#4ade80' }, // I-3
-        { d: [[1,1,1],[0,1,0]], c: '#a855f7' }, { d: [[0,1,0],[1,1,1]], c: '#a855f7' }, // T
+        { d: [[1,1],[1,1]], c: '#facc15' }, { d: [[1,1,1],[1,1,1],[1,1,1]], c: '#eab308' }, { d: [[1]], c: '#ec4899' },
+        { d: [[1,1,1,1]], c: '#38bdf8' }, { d: [[1],[1],[1],[1]], c: '#38bdf8' },
+        { d: [[1,1,1]], c: '#4ade80' }, { d: [[1],[1],[1]], c: '#4ade80' },
+        { d: [[1,1,1],[0,1,0]], c: '#a855f7' }, { d: [[0,1,0],[1,1,1]], c: '#a855f7' },
         { d: [[1,0],[1,1],[1,0]], c: '#a855f7' }, { d: [[0,1],[1,1],[0,1]], c: '#a855f7' },
-        { d: [[1,1,0],[0,1,1]], c: '#ef4444' }, { d: [[0,1,1],[1,1,0]], c: '#22c55e' }, // Z/S
+        { d: [[1,1,0],[0,1,1]], c: '#ef4444' }, { d: [[0,1,1],[1,1,0]], c: '#22c55e' },
         { d: [[1,0],[1,1],[0,1]], c: '#ef4444' }, { d: [[0,1],[1,1],[1,0]], c: '#22c55e' },
-        { d: [[1,1,1],[1,0,0]], c: '#f97316' }, { d: [[1,1,1],[0,0,1]], c: '#f97316' }, // L-Big
+        { d: [[1,1,1],[1,0,0]], c: '#f97316' }, { d: [[1,1,1],[0,0,1]], c: '#f97316' },
         { d: [[1,0,0],[1,1,1]], c: '#f97316' }, { d: [[0,0,1],[1,1,1]], c: '#f97316' },
         { d: [[1,1],[1,0],[1,0]], c: '#f97316' }, { d: [[1,1],[0,1],[0,1]], c: '#f97316' },
         { d: [[1,0],[1,0],[1,1]], c: '#f97316' }, { d: [[0,1],[0,1],[1,1]], c: '#f97316' },
-        { d: [[1,1],[1,0]], c: '#fb923c' }, { d: [[1,1],[0,1]], c: '#fb923c' }, // L-Small
+        { d: [[1,1],[1,0]], c: '#fb923c' }, { d: [[1,1],[0,1]], c: '#fb923c' },
         { d: [[1,0],[1,1]], c: '#fb923c' }, { d: [[0,1],[1,1]], c: '#fb923c' }
     ];
 
@@ -100,18 +115,8 @@
 
     function getSmartShape() {
         const fillCount = grid.flat().filter(x => x).length;
-        
-        // 1. Survival: Board fast voll (>45 Zellen) -> Gib 1x1
-        if(fillCount > 45) return SHAPES[2];
-
-        // 2. Combo-Manipulation: Reihe fast voll (7/8) -> 50% Chance auf 1x1
-        for(let r=0; r<8; r++) {
-            if(grid[r].filter(x => x).length === 7 && Math.random() > 0.5) return SHAPES[2];
-        }
-
-        // 3. Build-Up: Anfangs-Phase (<500 Punkte) -> 3x3 für schnellen Fortschritt
+        if(fillCount > 40) return SHAPES[2];
         if(score < 500 && Math.random() > 0.6) return SHAPES[1];
-
         return SHAPES[Math.floor(Math.random() * SHAPES.length)];
     }
 
@@ -120,39 +125,39 @@
             const shape = getSmartShape();
             const el = document.createElement('div');
             el.className = 'shape'; el.dataset.data = JSON.stringify(shape);
-            el.style.gridTemplateColumns = `repeat(${shape.d[0].length}, 24px)`;
+            el.style.gridTemplateColumns = `repeat(${shape.d[0].length}, 22px)`;
             shape.d.forEach(row => row.forEach(v => {
                 const b = document.createElement('div');
-                if(v) { b.className = 'block'; b.style.backgroundColor = shape.c; b.style.width='22px'; b.style.height='22px'; }
+                if(v) { b.className = 'block'; b.style.backgroundColor = shape.c; b.style.width='20px'; b.style.height='20px'; }
                 el.appendChild(b);
             }));
             slot.appendChild(el);
-            handleDrag(el, shape);
+            handleDrag(slot, el, shape); // Drag hängt am SLOT (große Hitbox)
         });
         checkGameOver();
     }
 
-    function handleDrag(el, shape) {
-        el.addEventListener('touchstart', (e) => {
+    function handleDrag(slot, el, shape) {
+        // Event-Listener am Slot, nicht am kleinen el!
+        slot.addEventListener('touchstart', (e) => {
             const rect = boardEl.getBoundingClientRect();
             const cellSize = rect.width / 8;
             
-            // Fixierung & Vergrößerung
+            // Sofortige Vergrößerung des Elements
             el.style.position = 'fixed'; el.style.zIndex = '1000';
             el.style.gridTemplateColumns = `repeat(${shape.d[0].length}, ${cellSize}px)`;
             el.querySelectorAll('.block').forEach(b => { b.style.width = cellSize+'px'; b.style.height = cellSize+'px'; });
 
             const move = (t) => {
                 const touch = t.touches[0];
-                // Offset: Block sitzt leicht über dem Finger für Sichtbarkeit
+                // Offset: Block schwebt über dem Finger
                 el.style.left = touch.clientX - (shape.d[0].length * cellSize / 2) + 'px';
-                el.style.top = touch.clientY - (shape.d.length * cellSize) - 60 + 'px';
+                el.style.top = touch.clientY - (shape.d.length * cellSize) - 70 + 'px';
                 
                 const r = el.getBoundingClientRect();
                 const gx = Math.round((r.left - rect.left) / cellSize);
                 const gy = Math.round((r.top - rect.top) / cellSize);
                 
-                // Preview Highlighting
                 Array.from(boardEl.children).forEach(c => c.style.filter = '');
                 if(canPlace(shape.d, gy, gx)) {
                     for(let i=0; i<shape.d.length; i++) for(let j=0; j<shape.d[0].length; j++)
@@ -168,15 +173,15 @@
                 if(canPlace(shape.d, gy, gx)) {
                     for(let i=0; i<shape.d.length; i++) for(let j=0; j<shape.d[0].length; j++)
                         if(shape.d[i][j]) grid[gy+i][gx+j] = shape.c;
-                    el.parentElement.innerHTML = '';
+                    slot.innerHTML = '';
                     score += shape.d.flat().filter(v=>v).length;
                     checkLines(); render();
                     if(slots.every(s => s.innerHTML === '')) refillTray();
                     else checkGameOver();
                 } else {
                     el.style = '';
-                    el.style.gridTemplateColumns = `repeat(${shape.d[0].length}, 24px)`;
-                    el.querySelectorAll('.block').forEach(b => { b.style.width='22px'; b.style.height='22px'; });
+                    el.style.gridTemplateColumns = `repeat(${shape.d[0].length}, 22px)`;
+                    el.querySelectorAll('.block').forEach(b => { b.style.width='20px'; b.style.height='20px'; });
                 }
                 Array.from(boardEl.children).forEach(c => c.style.filter = '');
                 window.removeEventListener('touchmove', move);
@@ -204,9 +209,8 @@
         }
         if(rs.length + cs.length > 0) {
             score += (rs.length + cs.length) * 100;
-            rs.forEach(r => { for(let i=0; i<8; i++) { boardEl.children[r*8+i].classList.add('clearing'); grid[r][i] = null; }});
-            cs.forEach(c => { for(let i=0; i<8; i++) { boardEl.children[i*8+c].classList.add('clearing'); grid[i][c] = null; }});
-            setTimeout(render, 300);
+            rs.forEach(r => { for(let i=0; i<8; i++) grid[r][i] = null; });
+            cs.forEach(c => { for(let i=0; i<8; i++) grid[i][c] = null; });
         }
     }
 
@@ -218,7 +222,6 @@
             const r = Math.floor(i/8), c = i%8;
             cell.className = 'cell' + (grid[r][c] ? ' filled' : '');
             cell.style.backgroundColor = grid[r][c] || '';
-            cell.classList.remove('clearing');
         });
     }
 
