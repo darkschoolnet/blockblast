@@ -16,27 +16,27 @@
         #top-ui { width: 100%; padding: 20px 25px 0 25px; display: flex; justify-content: space-between; align-items: center; }
         .highscore-box { color: #f9b31c; font-size: 24px; font-weight: bold; display: flex; align-items: center; gap: 8px; }
         
-        #score-container { text-align: center; margin: 10px 0; position: relative; width: 100%; height: 80px; }
+        #score-container { text-align: center; margin: 10px 0; position: relative; width: 100%; height: 90px; }
         
-        /* NEU: Score Transition für den Pop-Effekt */
         #score { 
-            font-size: 64px; font-weight: 900; position: relative; z-index: 2; 
-            text-shadow: 0 4px 15px rgba(0,0,0,0.4); 
+            font-size: 72px; font-weight: 900; position: relative; z-index: 2; 
+            text-shadow: 0 4px 15px rgba(0,0,0,0.5); 
             transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
         }
         
+        /* Das Herz leuchtet jetzt noch stärker und sitzt besser */
         #score-container::before {
-            content: '❤'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            font-size: 100px; color: #d633ff; filter: blur(25px); opacity: 0.4; z-index: 1;
+            content: '❤'; position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 110px; color: #ff2a85; filter: drop-shadow(0 0 20px #ff2a85) blur(18px); 
+            opacity: 0.55; z-index: 1;
         }
 
-        /* NEU: Wackel-Animation (Screen Shake) für saftigeres Feedback */
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
-            20%, 60% { transform: translateX(-4px) rotate(-1.5deg); }
-            40%, 80% { transform: translateX(4px) rotate(1.5deg); }
+            20%, 60% { transform: translateX(-5px) rotate(-2deg); }
+            40%, 80% { transform: translateX(5px) rotate(2deg); }
         }
-        .shake { animation: shake 0.35s ease-in-out; }
+        .shake { animation: shake 0.4s ease-in-out; }
 
         #board-wrapper {
             background: #1e284a; padding: 8px; border-radius: 12px;
@@ -48,12 +48,13 @@
             width: 90vw; max-width: 380px; aspect-ratio: 1; 
         }
 
-        .cell { background: #161d36; border-radius: 4px; width: 100%; height: 100%; }
+        /* KANTIGERE BLÖCKE: border-radius reduziert */
+        .cell { background: #161d36; border-radius: 2px; width: 100%; height: 100%; }
         .cell.filled { 
-            border: 2px solid rgba(0,0,0,0.15);
-            box-shadow: inset 4px 4px 0px rgba(255,255,255,0.3), inset -4px -4px 0px rgba(0,0,0,0.2);
+            border: 2px solid rgba(0,0,0,0.25);
+            box-shadow: inset 4px 4px 0px rgba(255,255,255,0.25), inset -4px -4px 0px rgba(0,0,0,0.25);
         }
-        .cell.highlight { background: rgba(255, 255, 255, 0.3) !important; box-shadow: 0 0 15px #fff; }
+        .cell.highlight { background: rgba(255, 255, 255, 0.4) !important; box-shadow: 0 0 15px #fff; }
 
         #tray { 
             display: flex; justify-content: space-around; align-items: center;
@@ -67,38 +68,48 @@
             border-radius: 10px;
         }
 
-        .shape { 
-            display: grid; gap: 2px; position: absolute; pointer-events: auto; 
-        }
+        .shape { display: grid; gap: 2px; position: absolute; pointer-events: auto; }
 
+        /* KANTIGERE BLÖCKE IM TRAY */
         .shape-block { 
-            width: 22px; height: 22px; border-radius: 4px; border: 1px solid rgba(0,0,0,0.1);
-            box-shadow: inset 2px 2px 0px rgba(255,255,255,0.2), inset -2px -2px 0px rgba(0,0,0,0.15);
+            width: 22px; height: 22px; border-radius: 2px; border: 1px solid rgba(0,0,0,0.2);
+            box-shadow: inset 2px 2px 0px rgba(255,255,255,0.25), inset -2px -2px 0px rgba(0,0,0,0.2);
         }
 
-        /* Leichte Anpassung: hellerers Aufleuchten beim Löschen */
-        @keyframes shrink { 0% { transform: scale(1.1); filter: brightness(2.5); } 100% { transform: scale(0); opacity: 0; } }
-        .clearing { animation: shrink 0.3s forwards; z-index: 100; }
+        /* STÄRKERE LÖSCH-ANIMATION */
+        @keyframes blast { 
+            0% { transform: scale(1.2); filter: brightness(3); border-radius: 50%; } 
+            50% { transform: scale(1.4); filter: brightness(1.5); opacity: 0.8; }
+            100% { transform: scale(0); opacity: 0; } 
+        }
+        .clearing { animation: blast 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; z-index: 100; }
 
         #game-over {
             position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none;
             flex-direction: column; align-items: center; justify-content: center; z-index: 9999;
         }
-        #game-over h2 { font-size: 48px; color: #ef4444; }
-        #game-over button { padding: 15px 40px; font-size: 20px; border-radius: 30px; border: none; background: #22c55e; color: white; cursor: pointer; }
+        #game-over h2 { font-size: 56px; color: #ef4444; margin-bottom: 20px; text-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        #game-over button { 
+            padding: 18px 45px; font-size: 22px; font-weight: bold; border-radius: 12px; border: none; 
+            background: #22c55e; color: white; cursor: pointer;
+            box-shadow: 0 6px 0 #16a34a, 0 15px 20px rgba(0,0,0,0.4);
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        #game-over button:active { transform: translateY(6px); box-shadow: 0 0 0 #16a34a, 0 5px 10px rgba(0,0,0,0.4); }
 
         #feedback-label {
-            position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);
-            font-size: 56px; font-weight: 900; opacity: 0; z-index: 500; text-shadow: 0 5px 15px rgba(0,0,0,0.6);
-            color: #ffeb3b; -webkit-text-stroke: 2px #d633ff;
-            pointer-events: none;
+            position: absolute; top: 38%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 64px; font-weight: 900; opacity: 0; z-index: 500; text-shadow: 0 8px 20px rgba(0,0,0,0.8);
+            color: #ffeb3b; -webkit-text-stroke: 3px #d633ff; font-style: italic;
+            pointer-events: none; white-space: nowrap;
         }
-        .animate-feedback { animation: feedAnim 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        .animate-feedback { animation: feedAnim 1s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
         @keyframes feedAnim { 
-            0% { opacity: 0; transform: translate(-50%, 20px) scale(0.5); } 
-            20% { opacity: 1; transform: translate(-50%, 0) scale(1.2); }
-            80% { opacity: 1; transform: translate(-50%, -80px) scale(1); }
-            100% { opacity: 0; transform: translate(-50%, -100px) scale(0.8); } 
+            0% { opacity: 0; transform: translate(-50%, 30px) scale(0.3); } 
+            15% { opacity: 1; transform: translate(-50%, 0) scale(1.3); }
+            25% { transform: translate(-50%, 0) scale(1.1); }
+            80% { opacity: 1; transform: translate(-50%, -90px) scale(1.1); filter: blur(0px); }
+            100% { opacity: 0; transform: translate(-50%, -120px) scale(0.8); filter: blur(10px); } 
         }
 
         .version { opacity: 0.1; font-size: 0.6em; padding-bottom: 5px; }
@@ -125,10 +136,10 @@
 
     <div id="game-over">
         <h2>GAME OVER</h2>
-        <button onclick="resetGame()">NEUSTART</button>
+        <button onclick="resetGame()">NEUES SPIEL</button>
     </div>
 
-    <div class="version">Beta V1.2 (Juiced)</div>
+    <div class="version">Beta V1.3 (Game Over & New Shapes)</div>
 
     <script>
         const boardEl = document.getElementById('board');
@@ -136,6 +147,7 @@
         const bestScoreEl = document.getElementById('best-score');
         const feedbackEl = document.getElementById('feedback-label');
         const boardWrapperEl = document.getElementById('board-wrapper');
+        const gameOverEl = document.getElementById('game-over');
         const slots = [document.getElementById('slot-0'), document.getElementById('slot-1'), document.getElementById('slot-2')];
         
         let grid = Array(8).fill().map(() => Array(8).fill(null));
@@ -143,33 +155,65 @@
         let bestScore = localStorage.getItem('bb_best') || 0;
         bestScoreEl.innerText = bestScore;
 
+        // ERWEITERTES SHAPE-ARRAY MIT NEUEN Z/S BLÖCKEN UND FAIREN FORMEN
         const SHAPES = [
-            { data: [[1,1],[1,1]], color: '#3b82f6' },
-            { data: [[1,1,1],[0,0,1]], color: '#ffcc00' },
-            { data: [[1,1,1,1]], color: '#ef4444' },
-            { data: [[1,1,1],[0,1,0]], color: '#00c7be' },
-            { data: [[1,1,1]], color: '#f97316' }
+            // Standard
+            { data: [[1,1],[1,1]], color: '#facc15' }, // 2x2
+            { data: [[1,1,1],[0,0,1]], color: '#fb923c' }, // L
+            { data: [[0,0,1],[1,1,1]], color: '#fb923c' }, // L gespiegelt
+            { data: [[1,1,1,1]], color: '#38bdf8' }, // 4er Linie
+            { data: [[1],[1],[1],[1]], color: '#38bdf8' }, // 4er Linie vertikal
+            { data: [[1,1,1],[0,1,0]], color: '#c084fc' }, // T
+            { data: [[1,1,1]], color: '#4ade80' }, // 3er Linie
+            { data: [[1],[1],[1]], color: '#4ade80' }, // 3er Linie vertikal
+            
+            // Neue S und Z Formen (Die "2x3 ausgefüllten" Blöcke)
+            { data: [[1,1,0],[0,1,1]], color: '#f43f5e' }, // Z horizontal
+            { data: [[0,1,1],[1,1,0]], color: '#f43f5e' }, // S horizontal
+            { data: [[1,0],[1,1],[0,1]], color: '#f43f5e' }, // Z vertikal
+            { data: [[0,1],[1,1],[1,0]], color: '#f43f5e' }, // S vertikal
+            
+            // Kleine / Cleane Formen für mehr Fairness
+            { data: [[1]], color: '#e879f9' }, // 1x1 Dot
+            { data: [[1,1]], color: '#a3e635' }, // 2er Linie
+            { data: [[1],[1]], color: '#a3e635' }, // 2er Linie vertikal
+            { data: [[1,1,1,1,1]], color: '#60a5fa' }, // 5er Linie
+            { data: [[1],[1],[1],[1],[1]], color: '#60a5fa' } // 5er Linie vertikal
         ];
 
         function init() {
             boardEl.innerHTML = '';
             for(let i=0; i<64; i++) boardEl.appendChild(document.createElement('div')).className = 'cell';
-            slots.forEach(spawn);
+            refillTray();
         }
 
-        function spawn(slot) {
-            const s = SHAPES[Math.floor(Math.random() * SHAPES.length)];
+        function refillTray() {
+            // Fairness-Logik: Erzwinge mindestens einen kleineren Block pro Refill, um das Board "cleaner" zu halten.
+            slots.forEach((slot, index) => {
+                let pool = SHAPES;
+                // Der letzte Slot kriegt mit höherer Wahrscheinlichkeit etwas Kleines
+                if(index === 2 && Math.random() > 0.3) {
+                    pool = SHAPES.filter(s => s.data.flat().filter(v=>v).length <= 3);
+                }
+                const s = pool[Math.floor(Math.random() * pool.length)];
+                spawn(slot, s);
+            });
+            checkGameOver();
+        }
+
+        function spawn(slot, shapeObj) {
             const el = document.createElement('div');
             el.className = 'shape';
-            el.style.gridTemplateColumns = `repeat(${s.data[0].length}, 24px)`;
+            el.shapeData = shapeObj.data; // Speichere Daten am Element für Game Over Check
+            el.style.gridTemplateColumns = `repeat(${shapeObj.data[0].length}, 24px)`;
             
-            s.data.forEach(row => row.forEach(v => {
+            shapeObj.data.forEach(row => row.forEach(v => {
                 const b = document.createElement('div');
-                if(v) { b.className = 'shape-block'; b.style.backgroundColor = s.color; }
+                if(v) { b.className = 'shape-block'; b.style.backgroundColor = shapeObj.color; }
                 el.appendChild(b);
             }));
             slot.appendChild(el);
-            handleDrag(el, slot, s.data, s.color);
+            handleDrag(el, slot, shapeObj.data, shapeObj.color);
         }
 
         function handleDrag(el, slot, data, color) {
@@ -187,7 +231,7 @@
 
                 const move = (t) => {
                     el.style.left = t.clientX - (data[0].length * size / 2) + 'px';
-                    el.style.top = t.clientY - (data.length * size) - 50 + 'px';
+                    el.style.top = t.clientY - (data.length * size) - 60 + 'px'; // Leicht weiter oben greifen
                     
                     const r = el.getBoundingClientRect();
                     const gx = Math.round((r.left - rect.left) / size);
@@ -215,13 +259,18 @@
                             }
                         }
                         slot.innerHTML = '';
-                        score += 10;
+                        score += data.flat().filter(v=>v).length * 2; // Punkte basierend auf Blockgröße
                         
-                        // FIX: Zeichne das Spielfeld SOFORT, bevor auf gelöschte Reihen geprüft wird.
                         render(); 
-                        
                         check();
-                        if(slots.every(s => s.innerHTML === '')) slots.forEach(spawn);
+                        
+                        // Wenn alle Slots leer sind, fülle Tray neu. Sonst prüfe Game Over.
+                        if(slots.every(s => s.innerHTML === '')) {
+                            refillTray();
+                        } else {
+                            checkGameOver();
+                        }
+                        
                     } else {
                         el.style = '';
                         el.style.gridTemplateColumns = `repeat(${data[0].length}, 24px)`;
@@ -248,8 +297,31 @@
             return true;
         }
 
+        // NEU: GAME OVER LOGIK
+        function checkGameOver() {
+            let possibleMoveFound = false;
+            
+            slots.forEach(slot => {
+                if(slot.children.length > 0) {
+                    let data = slot.children[0].shapeData;
+                    // Prüfe jedes Feld auf dem Spielfeld
+                    for(let r = 0; r < 8; r++) {
+                        for(let c = 0; c < 8; c++) {
+                            if(canPlace(data, r, c)) {
+                                possibleMoveFound = true;
+                            }
+                        }
+                    }
+                }
+            });
+
+            if(!possibleMoveFound) {
+                gameOverEl.style.display = 'flex';
+            }
+        }
+
         function triggerScorePop() {
-            scoreEl.style.transform = "scale(1.4)";
+            scoreEl.style.transform = "scale(1.3)";
             setTimeout(() => { scoreEl.style.transform = "scale(1)"; }, 150);
         }
 
@@ -265,30 +337,31 @@
             let totalCleared = rs.length + cs.length;
 
             if(totalCleared > 0) {
-                // JUICE: Feedback Texte basierend auf der Combo
-                const feedbackTexts = ["GOOD!", "GREAT!", "AWESOME!", "UNBELIEVABLE!"];
-                feedbackEl.innerText = feedbackTexts[Math.min(totalCleared - 1, 3)];
+                // VERBESSERTE WÖRTER FÜR COMBOS
+                const feedbackTexts = ["NICE!", "GREAT!", "AWESOME!", "EXCELLENT!", "UNBELIEVABLE!", "BLOCK BLAST!"];
+                feedbackEl.innerText = feedbackTexts[Math.min(totalCleared - 1, 5)];
                 feedbackEl.classList.remove('animate-feedback');
-                void feedbackEl.offsetWidth; // Erzwingt Reflow um Animation neu zu starten
+                void feedbackEl.offsetWidth; 
                 feedbackEl.classList.add('animate-feedback');
 
-                // JUICE: Screen Shake aktivieren
                 boardWrapperEl.classList.add('shake');
-                setTimeout(() => boardWrapperEl.classList.remove('shake'), 350);
+                setTimeout(() => boardWrapperEl.classList.remove('shake'), 400);
 
                 rs.forEach(r => { for(let i=0; i<8; i++) { boardEl.children[r*8+i].classList.add('clearing'); grid[r][i] = null; }});
                 cs.forEach(c => { for(let i=0; i<8; i++) { boardEl.children[i*8+c].classList.add('clearing'); grid[i][c] = null; }});
                 
-                // JUICE: Bonuspunkte für Combos
-                score += totalCleared * 100 * totalCleared; 
+                // Punkteberechnung für saftigere Combos
+                score += (totalCleared * 100) + (totalCleared > 1 ? totalCleared * 50 : 0); 
                 
-                // Score poppen lassen
                 triggerScorePop();
                 scoreEl.innerText = score;
 
-                setTimeout(render, 300);
+                setTimeout(() => {
+                    render();
+                    checkGameOver(); // Nach dem Löschen prüfen, ob man weiterspielen kann
+                }, 350);
             } else {
-                triggerScorePop(); // Auch beim reinen Platzieren ein kleiner Pop
+                triggerScorePop();
                 render();
             }
         }
@@ -306,7 +379,7 @@
         function resetGame() {
             grid = Array(8).fill().map(() => Array(8).fill(null));
             score = 0;
-            document.getElementById('game-over').style.display = 'none';
+            gameOverEl.style.display = 'none';
             init();
             render();
         }
