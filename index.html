@@ -1039,10 +1039,17 @@ async function doLogin(){
   const{data}=await db.from('dsn_users').select('*').eq('username',u).limit(1);
   if(!data?.length){err.textContent='User nicht gefunden!';err.classList.add('on');return;}
   if(!await checkPw(pw,data[0].salt,data[0].password_hash)){err.textContent='Falsches Passwort!';err.classList.add('on');return;}
-  saveS(data[0]);showProf();
+  saveS(data[0]);
+  hiScore = 0;
+  localStorage.removeItem('bb_hi');
+  updScore();
+  showProf();
 }
 function doLogout(){
   clearS();
+  hiScore = 0;
+  localStorage.removeItem('bb_hi');
+  updScore();
   document.getElementById('profArea').style.display='none';
   document.getElementById('authArea').style.display='block';
   document.getElementById('dsnToggle').classList.remove('on');
