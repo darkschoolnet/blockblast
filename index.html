@@ -82,7 +82,64 @@ body{display:flex;font-family:'Barlow',sans-serif;background:#2e4a8e;}
   background:linear-gradient(90deg,transparent 0%,rgba(255,240,120,.85) 20%,rgba(255,255,200,.95) 50%,rgba(255,240,120,.85) 80%,transparent 100%);
   box-shadow:0 0 18px 6px rgba(255,230,80,.6);transform-origin:left center;animation:rowGlow .52s ease-out forwards;}
 
-/* ── DANGER VIGNETTE ── */
+/* ── BOARD CLEAR — golden wave over all cells ── */
+@keyframes boardClearCell{
+  0%  {transform:scale(1);   filter:brightness(1)   ;}
+  20% {transform:scale(1.18);filter:brightness(1) saturate(0);}
+  45% {transform:scale(1.22);filter:brightness(3.5) saturate(2) hue-rotate(20deg);}
+  70% {transform:scale(1.1) ;filter:brightness(2.8) sepia(1) saturate(4);}
+  100%{transform:scale(0)   ;filter:brightness(6)   ;opacity:0;}
+}
+.cell.board-clearing{
+  animation:boardClearCell .72s cubic-bezier(.22,1,.36,1) forwards;
+  z-index:14;
+}
+/* stagger by diagonal (row+col) 0–14 → delays 0..210ms */
+.cell.board-clearing[data-di="0"] {animation-delay:.000s;}
+.cell.board-clearing[data-di="1"] {animation-delay:.015s;}
+.cell.board-clearing[data-di="2"] {animation-delay:.030s;}
+.cell.board-clearing[data-di="3"] {animation-delay:.045s;}
+.cell.board-clearing[data-di="4"] {animation-delay:.060s;}
+.cell.board-clearing[data-di="5"] {animation-delay:.075s;}
+.cell.board-clearing[data-di="6"] {animation-delay:.090s;}
+.cell.board-clearing[data-di="7"] {animation-delay:.105s;}
+.cell.board-clearing[data-di="8"] {animation-delay:.120s;}
+.cell.board-clearing[data-di="9"] {animation-delay:.135s;}
+.cell.board-clearing[data-di="10"]{animation-delay:.150s;}
+.cell.board-clearing[data-di="11"]{animation-delay:.165s;}
+.cell.board-clearing[data-di="12"]{animation-delay:.180s;}
+.cell.board-clearing[data-di="13"]{animation-delay:.195s;}
+.cell.board-clearing[data-di="14"]{animation-delay:.210s;}
+
+/* Golden overlay flash for board clear */
+.gold-flash{position:fixed;inset:0;pointer-events:none;z-index:901;
+  animation:goldFlash .9s ease-out forwards;}
+@keyframes goldFlash{
+  0%  {background:rgba(255,215,0,0);}
+  15% {background:rgba(255,215,0,.55);}
+  50% {background:rgba(255,215,0,.22);}
+  100%{background:rgba(255,215,0,0);}
+}
+/* BOARD CLEAR text */
+.board-clear-txt{
+  position:absolute;left:50%;top:50%;
+  transform:translate(-50%,-50%);
+  font-family:'Barlow Condensed',sans-serif;font-weight:800;
+  font-size:46px;color:#ffe135;
+  text-shadow:0 0 30px rgba(255,210,0,1),0 0 60px rgba(255,180,0,.8),4px 4px 0 rgba(0,0,0,.8);
+  pointer-events:none;z-index:40;
+  animation:boardClearTxt 1.8s cubic-bezier(.22,1,.36,1) forwards;
+  white-space:nowrap;
+}
+@keyframes boardClearTxt{
+  0%  {opacity:0;transform:translate(-50%,-50%) scale(.1) rotate(-6deg);}
+  18% {opacity:1;transform:translate(-50%,-50%) scale(1.5) rotate(2deg);}
+  36% {transform:translate(-50%,-50%) scale(1.05) rotate(0);}
+  65% {opacity:1;transform:translate(-50%,-60%) scale(1);}
+  100%{opacity:0;transform:translate(-50%,-100%) scale(.9);}
+}
+
+
 .danger-vignette{position:absolute;inset:-2px;border-radius:16px;pointer-events:none;z-index:6;opacity:0;transition:opacity .6s;
   box-shadow:inset 0 0 40px 12px rgba(255,40,40,.0);}
 .danger-vignette.on{opacity:1;animation:dangerPulse 1.2s ease-in-out infinite;}
@@ -496,6 +553,7 @@ function findGapMatchingShapes() {
 }
 
 function fateEngine() {
+  trayCount++;
   const state = getBoardState();
 
   // Track tension
@@ -512,120 +570,127 @@ function fateEngine() {
   const multiClear= scored.filter(x => x.score >= 2);
   const harmless  = scored.filter(x => x.score === 0 && shapeHasAnyPlacement(x.s));
 
-  // Gap-match shapes — pieces that fit snugly into existing cavities
-  const gapMatches = findGapMatchingShapes(); // sorted by snugness desc
+  // Gap-match shapes
+  const gapMatches = findGapMatchingShapes();
 
   const pieces = [];
 
-  for (let slot = 0; slot < 3; slot++) {
-    const r = Math.random();
-
-    /* ── CRITICAL (>82% full) — rescue mode ────────────────
-       Give mostly small/useful shapes. At least 1 guaranteed
-       line-clearer so player isn't immediately game-overed. */
-    if (state.critical) {
-      if (r < 0.78 && useful.length) {
-        const pool = multiClear.length && r < 0.38 ? multiClear : useful;
-        const pick = pool[Math.floor(Math.random()*pool.length)];
-        pieces.push({shape:pick.s, color:randColor(), gift: r < 0.38});
-        continue;
-      }
-      // Force small shapes in critical
-      const small = SHAPES.filter(s => s.flat().filter(v=>v).length <= 3);
-      pieces.push({shape:small[Math.floor(Math.random()*small.length)], color:randColor(), gift:false});
-      continue;
+  /* ══════════════════════════════════════
+     HONEYMOON PHASE — first 5 tray refills
+     Board is empty/sparse. Give easy shapes
+     that guarantee rows fill fast.
+  ══════════════════════════════════════ */
+  if (trayCount <= 5) {
+    // Easy shapes: straight bars + 2x2 squares — all clear easily on empty board
+    const easyShapes = [
+      [[1,1,1,1]],      // 4-bar horizontal
+      [[1],[1],[1],[1]], // 4-bar vertical
+      [[1,1,1]],        // 3-bar h
+      [[1],[1],[1]],    // 3-bar v
+      [[1,1,1,1,1]],    // 5-bar h
+      [[1],[1],[1],[1],[1]], // 5-bar v
+      [[1,1],[1,1]],    // 2x2
+      [[1,1,1],[1,1,1]],// 2x3
+      [[1,1],[1,1],[1,1]], // 3x2
+    ];
+    for (let slot = 0; slot < 3; slot++) {
+      const shape = easyShapes[Math.floor(Math.random() * easyShapes.length)];
+      pieces.push({shape, color: randColor(), gift: false});
     }
+    return ensureAllFit(pieces);
+  }
 
-    /* ── DANGER (>70% full) — increasing rescue probability ─ */
-    if (state.danger) {
-      // 65% chance of useful shape, rising to 80% with high trend
-      const rescueProb = 0.65 + Math.min(trend * 0.8, 0.15);
-      if (r < rescueProb && useful.length) {
-        const useMulti = multiClear.length && r < rescueProb * 0.45;
-        const pool = useMulti ? multiClear : useful;
-        const pick = pool[Math.floor(Math.random()*pool.length)];
-        pieces.push({shape:pick.s, color:randColor(), gift: useMulti});
-        continue;
-      }
-    }
-
-    /* ── COMBO SETUP: 2+ rows almost full ─────────────────── */
-    if (state.nearCompleteRows >= 2 || state.nearCompleteCols >= 2) {
-      // 40% chance: give a shape that enables multi-clear
-      if (r < 0.40 && multiClear.length) {
-        const pick = multiClear[Math.floor(Math.random()*multiClear.length)];
-        pieces.push({shape:pick.s, color:randColor(), gift:true});
-        continue;
-      }
-      // Additional 25%: give useful single-clear
-      if (r < 0.65 && useful.length) {
-        const pick = useful[Math.floor(Math.random()*useful.length)];
-        pieces.push({shape:pick.s, color:randColor(), gift:false});
-        continue;
-      }
-    }
-
-    /* ── NEAR-MISS AMPLIFICATION: 1 row needs exactly 1 cell ─ */
-    if (state.almostFullRows >= 1 || state.almostFullCols >= 1) {
-      // 30% chance: give a shape that fills exactly that gap
-      if (r < 0.30) {
-        // Find which row/col needs 1 cell
-        const targetRows = state.rowGaps.map((g,i)=>({g,i})).filter(x=>x.g===1);
-        const targetCols = state.colGaps.map((g,i)=>({g,i})).filter(x=>x.g===1);
-        const candidates = scored.filter(x=>x.score>=1);
-        if (candidates.length) {
-          const pick = candidates[Math.floor(Math.random()*candidates.length)];
-          pieces.push({shape:pick.s, color:randColor(), gift:false});
-          continue;
+  /* ══════════════════════════════════════
+     RESCUE MODE — board very full (>72%)
+     Give multiple trays of perfectly fitting
+     pieces until board is breathing again.
+  ══════════════════════════════════════ */
+  if (state.filledRatio >= 0.72) {
+    for (let slot = 0; slot < 3; slot++) {
+      const r = Math.random();
+      if (state.critical) {
+        // Critical: almost exclusively line-clearers or tiny pieces
+        if (r < 0.82 && useful.length) {
+          const pool = multiClear.length && r < 0.40 ? multiClear : useful;
+          pieces.push({shape: pool[Math.floor(Math.random()*pool.length)].s, color:randColor(), gift:false});
+        } else {
+          const small = SHAPES.filter(s => s.flat().filter(v=>v).length <= 3);
+          pieces.push({shape: small[Math.floor(Math.random()*small.length)], color:randColor(), gift:false});
+        }
+      } else {
+        // Danger: mostly useful, occasionally gap-match
+        if (r < 0.45 && gapMatches.length) {
+          const pool = gapMatches.slice(0, 3);
+          pieces.push({shape: pool[Math.floor(Math.random()*pool.length)].s, color:randColor(), gift:false});
+        } else if (r < 0.78 && useful.length) {
+          pieces.push({shape: useful[Math.floor(Math.random()*useful.length)].s, color:randColor(), gift:false});
+        } else {
+          pieces.push(randPiece());
         }
       }
     }
+    return ensureAllFit(pieces);
+  }
 
-    /* ── TENSION BUILDER: board filling fast → give bad piece ─
-       If board is < 55% and trend is falling (just cleared),
-       occasionally give a harder shape to rebuild tension.     */
-    if (!state.danger && state.filledRatio < 0.52 && trend < -0.05 && r < 0.20) {
-      // Give a larger, harder-to-place shape
+  /* ══════════════════════════════════════
+     NORMAL PLAY — weighted fate engine
+  ══════════════════════════════════════ */
+  for (let slot = 0; slot < 3; slot++) {
+    const r = Math.random();
+
+    /* ── COMBO SETUP: 2+ rows almost full ── */
+    if (state.nearCompleteRows >= 2 || state.nearCompleteCols >= 2) {
+      if (r < 0.40 && multiClear.length) {
+        pieces.push({shape: multiClear[Math.floor(Math.random()*multiClear.length)].s, color:randColor(), gift:false});
+        continue;
+      }
+      if (r < 0.65 && useful.length) {
+        pieces.push({shape: useful[Math.floor(Math.random()*useful.length)].s, color:randColor(), gift:false});
+        continue;
+      }
+    }
+
+    /* ── NEAR-MISS: 1 row needs exactly 1 cell ── */
+    if (state.almostFullRows >= 1 || state.almostFullCols >= 1) {
+      if (r < 0.30 && useful.length) {
+        pieces.push({shape: useful[Math.floor(Math.random()*useful.length)].s, color:randColor(), gift:false});
+        continue;
+      }
+    }
+
+    /* ── GAP MATCH ── */
+    if (gapMatches.length) {
+      const top = gapMatches[0];
+      const boostProb = top.snugness > 0.85 ? 0.70 : top.snugness > 0.70 ? 0.55 : 0.35;
+      if (r < boostProb) {
+        const pool = gapMatches.slice(0, Math.min(4, gapMatches.length));
+        pieces.push({shape: pool[Math.floor(Math.random()*pool.length)].s, color:randColor(), gift:false});
+        continue;
+      }
+    }
+
+    /* ── TENSION BUILDER: board just cleared → occasional hard piece ── */
+    if (state.filledRatio < 0.52 && trend < -0.05 && r < 0.20) {
       const hard = SHAPES.filter(s => s.flat().filter(v=>v).length >= 5);
       if (hard.length) {
-        pieces.push({shape:hard[Math.floor(Math.random()*hard.length)], color:randColor(), gift:false});
+        pieces.push({shape: hard[Math.floor(Math.random()*hard.length)], color:randColor(), gift:false});
         continue;
       }
     }
 
-    /* ── PLATEAU BREAK: nothing interesting happening ─────────
-       If board hasn't changed much, force an opening shape.    */
+    /* ── PLATEAU BREAK ── */
     if (trendLen >= 5 && Math.abs(trend) < 0.03 && state.filledRatio > 0.35 && r < 0.22) {
       if (useful.length) {
-        const pick = useful[Math.floor(Math.random()*useful.length)];
-        pieces.push({shape:pick.s, color:randColor(), gift:false});
+        pieces.push({shape: useful[Math.floor(Math.random()*useful.length)].s, color:randColor(), gift:false});
         continue;
       }
     }
 
-    /* ── GAP MATCH: piece fits snugly into an existing cavity ───
-       If the board has a hole shaped like a specific piece,
-       boost the chance that piece (or something that fits there) appears.
-       Snugness 0.55–0.7 → 35% boost, >0.7 → 55% boost, >0.85 → 70%.   */
-    if (gapMatches.length) {
-      const top = gapMatches[0]; // highest snugness
-      const boostProb = top.snugness > 0.85 ? 0.70
-                      : top.snugness > 0.70 ? 0.55
-                      : 0.35;
-      if (r < boostProb) {
-        // Pick randomly from top snug matches (up to top 4) to avoid always same shape
-        const pool = gapMatches.slice(0, Math.min(4, gapMatches.length));
-        const pick = pool[Math.floor(Math.random() * pool.length)];
-        pieces.push({shape: pick.s, color: randColor(), gift: false});
-        continue;
-      }
-    }
-
-    /* ── DEFAULT: real random ─────────────────────────────── */
+    /* ── DEFAULT: real random ── */
     pieces.push(randPiece());
   }
 
-  return pieces;
+  return ensureAllFit(pieces);
 }
 
 
@@ -635,10 +700,11 @@ function fateEngine() {
 ════════════════════════════════════════ */
 let board, score, hiScore = parseInt(localStorage.getItem('bb_hi')||'0');
 let tray, drag, ghost, gameOver, cellMap;
+let trayCount = 0; // how many tray refills have happened this game
 
 function startGame() {
   board    = Array.from({length:N},()=>Array(N).fill(null));
-  score    = 0; gameOver = false;
+  score    = 0; gameOver = false; trayCount = 0;
   tensionHistory = [];
   document.getElementById('goOverlay').classList.remove('show');
   document.getElementById('dv').classList.remove('on');
@@ -680,6 +746,7 @@ function syncBoard() {
     const d=cellMap[r][c];
     if(!d||d.classList.contains('clearing'))continue;
     d.className='cell'+(board[r][c]?' b-'+board[r][c]:'');
+    d.style.background=''; // clear any inline ghost tint
   }
 }
 
@@ -719,7 +786,7 @@ function mkPgrid(shape,color,sz,gap=3){
 /* ════════════════════════════════════════
    DRAG — accurate coordinate system
 ════════════════════════════════════════ */
-const DRAG_SCALE = 1.22;
+const DRAG_SCALE = 1.0; // ghost same size as board cells
 // Lift in cells — applies to ALL pointer types so ghost never hides under finger/cursor
 const LIFT_CELLS_TOUCH = 2.2; // touch: more lift (finger is fat)
 const LIFT_CELLS_MOUSE = 1.4; // mouse: moderate lift for clarity
@@ -764,14 +831,14 @@ function beginDrag(e,si){
 }
 
 function posDG(e){
-  const cs=csNum(), st=stride(), scale=DRAG_SCALE;
+  const cs=csNum(), st=stride();
   const lift = getLiftPx();
-  // Grabbed cell center (in scaled ghost coords)
-  const localCX = (drag.gc*st + cs/2) * scale;
-  const localCY = (drag.gr*st + cs/2) * scale;
+  // Grabbed cell center in ghost coords (scale=1, same as board)
+  const localCX = drag.gc*st + cs/2;
+  const localCY = drag.gr*st + cs/2;
   // Position ghost so grabbed cell center sits at (e.clientX, e.clientY - lift)
   const dg=document.getElementById('dg');
-  dg.style.transform=`scale(${scale})`;
+  dg.style.transform='';
   dg.style.left=(e.clientX - localCX)+'px';
   dg.style.top =(e.clientY - lift - localCY)+'px';
 }
@@ -804,13 +871,57 @@ function showGhost(){
   syncBoard();
   if(!ghost||!drag)return;
   const valid=canPlace(drag.shape,ghost.row,ghost.col);
+
+  // Cells the piece would occupy
+  const placedCells=new Set();
   drag.shape.forEach((row,dr)=>row.forEach((v,dc)=>{
     if(!v)return;
-    const r=ghost.row+dr,c=ghost.col+dc;
-    if(r<0||r>=N||c<0||c>=N)return;
-    const d=cellMap[r][c];if(!d)return;
-    d.className=valid?'cell b-'+drag.color+' ghost':'cell ghost-bad';
+    const r=ghost.row+dr, c=ghost.col+dc;
+    if(r>=0&&r<N&&c>=0&&c<N) placedCells.add(r*N+c);
   }));
+
+  // Find rows/cols that would be completed by this placement
+  const completeRows=new Set(), completeCols=new Set();
+  if(valid){
+    for(let r=0;r<N;r++){
+      let full=true;
+      for(let c=0;c<N;c++){
+        if(!board[r][c]&&!placedCells.has(r*N+c)){full=false;break;}
+      }
+      if(full) completeRows.add(r);
+    }
+    for(let c=0;c<N;c++){
+      let full=true;
+      for(let r=0;r<N;r++){
+        if(!board[r][c]&&!placedCells.has(r*N+c)){full=false;break;}
+      }
+      if(full) completeCols.add(c);
+    }
+  }
+
+  // Apply colors
+  for(let r=0;r<N;r++) for(let c=0;c<N;c++){
+    const d=cellMap[r][c]; if(!d) continue;
+    const isPlaced=placedCells.has(r*N+c);
+    const inCompleteRow=completeRows.has(r);
+    const inCompleteCol=completeCols.has(c);
+
+    if(inCompleteRow||inCompleteCol){
+      // Entire row/col lights up in piece color (semi-transparent for empty cells)
+      if(board[r][c]||isPlaced){
+        d.className='cell b-'+drag.color+' ghost';
+      } else {
+        d.className='cell ghost';
+        d.style.background='';
+        // Tint empty cells with piece color at low opacity
+        const colorMap={c:'rgba(61,197,245,.35)',b:'rgba(88,104,212,.35)',o:'rgba(255,109,40,.35)',
+          y:'rgba(255,204,0,.35)',g:'rgba(80,190,80,.35)',r:'rgba(236,48,48,.35)',p:'rgba(168,64,224,.35)'};
+        d.style.background=colorMap[drag.color]||'rgba(255,255,255,.18)';
+      }
+    } else if(isPlaced){
+      d.className=valid?'cell b-'+drag.color+' ghost':'cell ghost-bad';
+    }
+  }
 }
 
 function onUp(e){
@@ -940,6 +1051,58 @@ async function checkClears(placed){
     d.className='cell';delete d.dataset.ci;
   });
   syncBoard();
+
+  // Check for full board clear
+  if(board.flat().every(v=>v===null)){
+    await triggerBoardClear();
+  }
+}
+
+/* ════════════════════════════════════════
+   BOARD CLEAR — golden celebration
+════════════════════════════════════════ */
+async function triggerBoardClear() {
+  const pts = 200;
+  score += pts; updScore(); bumpScore();
+
+  // Gold flash
+  const flash = document.createElement('div');
+  flash.className = 'gold-flash';
+  document.body.appendChild(flash);
+  setTimeout(() => flash.remove(), 1000);
+
+  // Board clear text
+  const txt = document.createElement('div');
+  txt.className = 'board-clear-txt';
+  txt.textContent = '✨ PERFECT CLEAR! ✨';
+  document.querySelector('.board-wrap').appendChild(txt);
+  setTimeout(() => txt.remove(), 1900);
+
+  // Heavy particles from all cells
+  const cs = csNum(), st = stride();
+  const bwEl = document.querySelector('.board-wrap');
+  const allCells = [];
+  for(let r=0;r<N;r++) for(let c=0;c<N;c++) allCells.push({r,c});
+  spawnParticles(allCells, cs, st, bwEl, 8);
+
+  await sleep(300);
+}
+
+/* ════════════════════════════════════════
+   SAFE TRAY — guarantee all 3 pieces fit
+   Re-rolls any piece that has zero valid
+   placements on the current board.
+════════════════════════════════════════ */
+function ensureAllFit(pieces) {
+  return pieces.map(p => {
+    if (!p) return p;
+    let attempts = 0;
+    while (!shapeHasAnyPlacement(p.shape) && attempts < 80) {
+      p = randPiece();
+      attempts++;
+    }
+    return p;
+  });
 }
 
 function spawnParticles(placed,cs,st,container,lines){
